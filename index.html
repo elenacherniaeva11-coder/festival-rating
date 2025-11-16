@@ -7,8 +7,6 @@
   body { font-family: Arial, sans-serif; background: #f5f5f5; text-align: center; }
   h1 { color: #333; }
   .team { padding: 10px; margin: 5px; background: #fff; border-radius: 8px; display: flex; justify-content: space-between; max-width: 400px; margin-left:auto; margin-right:auto; }
-  .stars span { cursor: pointer; color: #ccc; font-size: 20px; }
-  .stars span.selected { color: gold; }
 </style>
 </head>
 <body>
@@ -16,32 +14,36 @@
 <div id="tablo"></div>
 
 <script>
-const DATA_URL = "https://script.google.com/macros/s/AKfycby9r5bM1Eg7Sd_w3W68xIV7rXKOLYijiA2gLM-2JusThYBbMdWcl79J_fd30wAReEisHA/exec"; // замените на ссылку Google Apps Script
+const DATA_URL = "https://script.google.com/macros/s/AKfycby9r5bM1Eg7Sd_w3W68xIV7rXKOLYijiA2gLM-2JusThYBbMdWcl79J_fd30wAReEisHA/exec";
 
 function fetchData(){
   fetch(DATA_URL)
-  .then(res=>res.json())
-  .then(data=>{
-    let teams = {};
-    data.forEach(item=>{
-      if(!teams[item.team]) teams[item.team] = { total:0, votes:0 };
-      teams[item.team].total += parseInt(item.rating);
-      teams[item.team].votes += 1;
+    .then(res => res.json())
+    .then(data => {
+      if(data.error){
+        document.getElementById("tablo").innerHTML = "Ошибка: " + data.error;
+        return;
+      }
+
+      let teams = {};
+      data.forEach(item => {
+        if(!teams[item.team]) teams[item.team] = { total:0, votes:0 };
+        teams[item.team].total += Number(item.rating);
+        teams[item.team].votes += 1;
+      });
+
+      let sorted = Object.keys(teams).sort((a,b)=>{
+        return (teams[b].total/teams[b].votes) - (teams[a].total/teams[a].votes);
+      });
+
+      let html = "";
+      sorted.forEach((team, i) => {
+        let avg = (teams[team].total/teams[team].votes).toFixed(1);
+        html += `<div class="team"><span>${i+1}. ${team}</span><span>${avg} ⭐</span></div>`;
+      });
+
+      document.getElementById("tablo").innerHTML = html;
     });
-    // сортировка по рейтингу
-    let sorted = Object.keys(teams).sort((a,b)=>{
-      let avgA = teams[a].total/teams[a].votes;
-      let avgB = teams[b].total/teams[b].votes;
-      return avgB - avgA;
-    });
-    // отображение
-    let html = "";
-    sorted.forEach((team,i)=>{
-      let avg = (teams[team].total/teams[team].votes).toFixed(1);
-      html += `<div class="team"><span>${i+1}. ${team}</span><span>${avg} ⭐</span></div>`;
-    });
-    document.getElementById("tablo").innerHTML = html;
-  });
 }
 
 fetchData();
